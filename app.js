@@ -1,9 +1,3 @@
-// =====================================================================
-// Control de Visitas — versión estática para GitHub Pages
-// Reemplaza el backend Flask: los datos viven en localStorage del navegador
-// y la sesión en sessionStorage. Usuario: Diego  |  Clave: 12345
-// =====================================================================
-
 // ---------- utilidades ----------
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c =>
@@ -17,112 +11,20 @@ function toast(msg, error = false) {
   toast.t = setTimeout(() => (t.className = "toast"), 2800);
 }
 
-// ---------- sesión ----------
-const USUARIO = "Diego", CLAVE = "12345";
-const sesion = {
-  get: () => { try { return sessionStorage.getItem("usuario"); } catch { return null; } },
-  set: (u) => { try { sessionStorage.setItem("usuario", u); } catch {} },
-  clear: () => { try { sessionStorage.removeItem("usuario"); } catch {} },
-};
-
-// ---------- datos (simulados + localStorage) ----------
-const KEY = "control_visitas_v1";
-const SEED = [
-  ["jose",          "73016661", "oscar",       "ll",               "2026-09-09", "17:37:34", "17:40:00"],
-  ["Sofía Herrera", "71234567", "María Salas", "Gerencia",         "2026-09-09", "17:35:43", "17:40:01"],
-  ["Rosa Quispe",   "48990011", "Edith Ramos", "Mesa de partes",   "2026-09-09", "14:30:00", "17:39:58"],
-  ["Jorge Paredes", "42334455", "Oscar Díaz",  "Tesorería",        "2026-09-09", "11:00:00", "17:40:01"],
-  ["Carmen Vega",   "47665544", "Elena Ríos",  "Legal",            "2026-09-09", "08:40:00", "09:15:00"],
-  ["Luis Mendoza",  "40112233", "Pedro Núñez", "Recursos Humanos", "2026-09-08", "10:20:00", "11:05:00"],
-  ["Ana Torres",    "45891234", "María Salas", "Gerencia",         "2026-09-08", "09:10:00", "09:45:00"],
-].map(([nombre, dni, persona_visitada, despacho, fecha, hora_entrada, hora_salida], i) =>
-  ({ id_visita: i + 1, nombre, dni, persona_visitada, despacho, fecha, hora_entrada, hora_salida }));
-
-let memoria = null; // respaldo si localStorage no está disponible
-function leerDB() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return memoria ?? { visitas: structuredClone(SEED), next: SEED.length + 1 };
+async function api(url, method = "GET", body) {
+  const r = await fetch(url, {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401 && !url.startsWith("/login")) location.href = "/login";
+  if (!r.ok) throw new Error(data.error || "Error inesperado");
+  return data;
 }
-function guardarDB(db) {
-  memoria = db;
-  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
-}
-
-const pad = (n) => String(n).padStart(2, "0");
-const hms = (s) => `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
-
-function segundos(v) {
-  if (!v.hora_salida) return null;
-  const ini = new Date(`${v.fecha}T${v.hora_entrada}`);
-  const fin = new Date(`${v.fecha}T${v.hora_salida}`);
-  return Math.max(Math.floor((fin - ini) / 1000), 0);
-}
-
-const serializar = (v) => {
-  const s = segundos(v);
-  return { ...v, tiempo: s !== null ? hms(s) : null };
-};
-
-// ---------- "API" local (misma lógica que app.py) ----------
-const API = {
-  visitas() {
-    const { visitas } = leerDB();
-    return [...visitas]
-      .sort((a, b) => (b.fecha + b.hora_entrada).localeCompare(a.fecha + a.hora_entrada))
-      .map(serializar);
-  },
-
-  entrada({ nombre, dni, visitado, despacho }) {
-    nombre = (nombre || "").trim(); dni = (dni || "").trim();
-    visitado = (visitado || "").trim(); despacho = (despacho || "").trim();
-    if (!nombre || !dni || !visitado || !despacho) throw new Error("Completa todos los campos");
-    if (!/^\d{8,12}$/.test(dni)) throw new Error("El DNI debe tener entre 8 y 12 dígitos");
-
-    const db = leerDB();
-    if (db.visitas.some(v => v.dni === dni && !v.hora_salida)) throw new Error("Ese visitante ya está en sede");
-    const ahora = new Date();
-    db.visitas.push({
-      id_visita: db.next++, nombre, dni, persona_visitada: visitado, despacho,
-      fecha: `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`,
-      hora_entrada: `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:${pad(ahora.getSeconds())}`,
-      hora_salida: null,
-    });
-    guardarDB(db);
-    return { mensaje: "Entrada registrada correctamente" };
-  },
-
-  salida(id) {
-    const db = leerDB();
-    const v = db.visitas.find(x => x.id_visita === id);
-    if (!v) throw new Error("Visita no encontrada");
-    if (v.hora_salida) throw new Error("La salida ya estaba registrada");
-    const a = new Date();
-    v.hora_salida = `${pad(a.getHours())}:${pad(a.getMinutes())}:${pad(a.getSeconds())}`;
-    guardarDB(db);
-    return { mensaje: "Salida registrada" };
-  },
-
-  reportes() {
-    const { visitas } = leerDB();
-    const dur = visitas.map(segundos).filter(s => s !== null);
-    const prom = dur.length ? Math.floor(dur.reduce((a, b) => a + b, 0) / dur.length) : 0;
-    const contar = (clave) => visitas.reduce((m, v) => m.set(v[clave], (m.get(v[clave]) || 0) + 1), new Map());
-    return {
-      promedio_txt: `${Math.floor(prom / 3600)} h ${Math.floor((prom % 3600) / 60)} min`,
-      por_dia: [...contar("fecha")].sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([fecha, total]) => ({ fecha, total })),
-      por_despacho: [...contar("despacho")]
-        .sort((a, b) => b[1] - a[1] || a[0].toLowerCase().localeCompare(b[0].toLowerCase()))
-        .map(([despacho, total]) => ({ despacho, total })),
-    };
-  },
-};
 
 let TODAS = [];
-const cargar = () => (TODAS = API.visitas());
+const cargar = async () => (TODAS = await api("/api/visitas"));
 
 function actualizarCards(lista) {
   if (!$("total")) return;
@@ -132,43 +34,35 @@ function actualizarCards(lista) {
   $("finalizados").textContent = lista.length - activos;
 }
 
-function salida(id, btn) {
+async function salida(id, btn) {
+  btn.disabled = true;
   try {
-    const r = API.salida(id);
+    const r = await api(`/api/salida/${id}`, "POST");
     toast("✔ " + r.mensaje);
-    refrescar();
-  } catch (e) { toast("❌ " + e.message, true); }
+    await refrescar();
+  } catch (e) { toast("❌ " + e.message, true); btn.disabled = false; }
 }
 
-// ---------- LOGIN (index.html) ----------
+// ---------- LOGIN ----------
 if ($("loginForm")) {
-  if (sesion.get()) location.replace("inicio.html");
-  $("loginForm").addEventListener("submit", (ev) => {
+  $("loginForm").addEventListener("submit", async (ev) => {
     ev.preventDefault();
-    const u = $("usuario").value.trim(), p = $("password").value;
-    if (!u || !p) return toast("⚠ Completa los campos", true);
-    if (u === USUARIO && p === CLAVE) {
-      sesion.set(USUARIO);
-      location.href = "inicio.html";
-    } else toast("❌ Usuario o contraseña incorrectos", true);
+    if (!$("usuario").value || !$("password").value) return toast("⚠ Completa los campos", true);
+    try {
+      await api("/login", "POST", { usuario: $("usuario").value, password: $("password").value });
+      location.href = "/";
+    } catch (e) { toast("❌ " + e.message, true); }
   });
-}
-
-// ---------- páginas internas: guardia + logout ----------
-const page = document.body.dataset.page;
-if (page) {
-  if (!sesion.get()) location.replace("index.html");
-  const av = $("avatar"); if (av) av.title = sesion.get() || "";
-  const lo = $("logout");
-  if (lo) lo.addEventListener("click", () => sesion.clear());
 }
 
 // ---------- búsqueda global ----------
 const buscar = $("buscarGlobal");
 if (buscar) {
-  buscar.value = new URLSearchParams(location.search).get("q") || "";
+  const page = document.body.dataset.page;
+  const q0 = new URLSearchParams(location.search).get("q") || "";
+  buscar.value = q0;
   buscar.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && page !== "registros") location.href = "registros.html?q=" + encodeURIComponent(buscar.value);
+    if (e.key === "Enter" && page !== "registros") location.href = "/registros?q=" + encodeURIComponent(buscar.value);
   });
   if (page === "registros") buscar.addEventListener("input", () => renderRegistros());
 }
@@ -183,19 +77,21 @@ function renderActivos() {
     <td><button class="btn btn-sm" onclick="salida(${v.id_visita}, this)">Registrar salida</button></td></tr>`).join("");
 }
 
-if (page === "inicio") {
-  window.refrescar = () => { cargar(); actualizarCards(TODAS); renderActivos(); };
+if (document.body.dataset.page === "inicio") {
+  window.refrescar = async () => { await cargar(); actualizarCards(TODAS); renderActivos(); };
   refrescar();
-  $("btnEntrada").addEventListener("click", () => {
+  $("btnEntrada").addEventListener("click", async (ev) => {
     const d = { nombre: $("nombre").value, dni: $("dni").value,
                 visitado: $("visitado").value, despacho: $("despacho").value };
     if (Object.values(d).some(v => !v.trim())) return toast("⚠ Completa todos los campos", true);
+    ev.target.disabled = true;
     try {
-      const r = API.entrada(d);
+      const r = await api("/api/entrada", "POST", d);
       toast("✔ " + r.mensaje);
       ["nombre", "dni", "visitado", "despacho"].forEach(i => ($(i).value = ""));
-      refrescar();
+      await refrescar();
     } catch (e) { toast("❌ " + e.message, true); }
+    finally { ev.target.disabled = false; }
   });
 }
 
@@ -220,8 +116,8 @@ function renderRegistros() {
     : `<tr><td colspan="10" style="text-align:center;color:#64748b">Sin resultados</td></tr>`;
 }
 
-if (page === "registros") {
-  window.refrescar = () => { cargar(); renderRegistros(); };
+if (document.body.dataset.page === "registros") {
+  window.refrescar = async () => { await cargar(); renderRegistros(); };
   refrescar();
   $("btnFiltrar").onclick = () => { renderRegistros(); toast("✔ Filtro aplicado"); };
   $("btnLimpiar").onclick = () => { $("filtroFecha").value = ""; $("filtroDespacho").value = ""; buscar.value = ""; renderRegistros(); };
@@ -240,8 +136,8 @@ if (page === "registros") {
 }
 
 // ---------- REPORTES ----------
-function cargarReportes() {
-  const r = API.reportes();
+async function cargarReportes() {
+  const r = await api("/api/reportes");
   $("promedio").textContent = r.promedio_txt;
   const fila = (nombre, total, max) => `<div class="row"><span>${esc(nombre)}</span>
     <span class="bar"><i style="width:${total / max * 100}%"></i></span><b>${total}</b></div>`;
@@ -250,7 +146,7 @@ function cargarReportes() {
   $("porDia").innerHTML = r.por_dia.map(x => fila(x.fecha, x.total, maxD)).join("");
   $("porDespacho").innerHTML = r.por_despacho.map(x => fila(x.despacho, x.total, maxS)).join("");
 }
-if (page === "reportes") {
+if (document.body.dataset.page === "reportes") {
   cargarReportes();
-  $("btnActualizar").onclick = () => { cargarReportes(); toast("✔ Reportes actualizados"); };
+  $("btnActualizar").onclick = async () => { await cargarReportes(); toast("✔ Reportes actualizados"); };
 }
