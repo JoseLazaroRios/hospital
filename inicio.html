@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inicio · Control de Visitas</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script>try{if(!sessionStorage.getItem("usuario"))location.replace("index.html")}catch(e){}</script>
+</head>
+<body data-page="inicio">
+<div id="toast" class="toast"></div>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo"><i class="fa-solid fa-building-user"></i></div>
+    <div><strong>Control</strong><small>Visitas</small></div>
+  </div>
+  <nav>
+    <a href="inicio.html" class="active"><i class="fa-solid fa-house"></i> Inicio</a>
+    <a href="registros.html"><i class="fa-solid fa-clipboard-list"></i> Registros</a>
+    <a href="reportes.html"><i class="fa-solid fa-chart-column"></i> Reportes</a>
+  </nav>
+  <a class="logout" id="logout" href="index.html"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</a>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div>
+      <h1>Inicio</h1>
+      <p class="muted">Registra una nueva visita o revisa el estado del día.</p>
+    </div>
+    <div class="top-right">
+      <div class="search"><i class="fa-solid fa-magnifying-glass"></i>
+        <input id="buscarGlobal" placeholder="Buscar visitante, DNI o despacho…"></div>
+      <div class="avatar" id="avatar"><i class="fa-solid fa-user"></i></div>
+    </div>
+  </header>
+  <section class="cards">
+    <div class="stat purple"><div><small>Total</small><b id="total">0</b></div><i class="fa-solid fa-users"></i></div>
+    <div class="stat orange"><div><small>En sede</small><b id="activos">0</b></div><i class="fa-solid fa-person-walking"></i></div>
+    <div class="stat blue"><div><small>Finalizados</small><b id="finalizados">0</b></div><i class="fa-solid fa-circle-check"></i></div>
+  </section>
+
+  <section class="panel">
+    <h3>Registrar visitante</h3>
+    <div class="grid2">
+      <div><label>Nombre completo</label><input id="nombre" placeholder="Nombre y apellidos"></div>
+      <div><label>DNI</label><input id="dni" placeholder="8 a 12 dígitos" inputmode="numeric" maxlength="12"></div>
+      <div><label>Persona a visitar</label><input id="visitado" placeholder="Nombre del anfitrión"></div>
+      <div><label>Despacho</label><input id="despacho" placeholder="Gerencia, Legal, RR.HH…"></div>
+    </div>
+    <button class="btn btn-green" id="btnEntrada"><i class="fa-solid fa-door-open"></i> Registrar entrada</button>
+  </section>
+
+  <section class="panel" id="panelActivos" style="display:none">
+    <h3>En sede ahora</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Nombre</th><th>DNI</th><th>Visitado</th><th>Despacho</th><th>Entrada</th><th></th></tr></thead>
+      <tbody id="tablaActivos"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>

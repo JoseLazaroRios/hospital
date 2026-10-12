@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reportes · Control de Visitas</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script>try{if(!sessionStorage.getItem("usuario"))location.replace("index.html")}catch(e){}</script>
+</head>
+<body data-page="reportes">
+<div id="toast" class="toast"></div>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo"><i class="fa-solid fa-building-user"></i></div>
+    <div><strong>Control</strong><small>Visitas</small></div>
+  </div>
+  <nav>
+    <a href="inicio.html"><i class="fa-solid fa-house"></i> Inicio</a>
+    <a href="registros.html"><i class="fa-solid fa-clipboard-list"></i> Registros</a>
+    <a href="reportes.html" class="active"><i class="fa-solid fa-chart-column"></i> Reportes</a>
+  </nav>
+  <a class="logout" id="logout" href="index.html"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</a>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div>
+      <h1>Reportes</h1>
+      <p class="muted">Resumen de permanencia, días y despachos.</p>
+    </div>
+    <div class="top-right">
+      <div class="search"><i class="fa-solid fa-magnifying-glass"></i>
+        <input id="buscarGlobal" placeholder="Buscar visitante, DNI o despacho…"></div>
+      <div class="avatar" id="avatar"><i class="fa-solid fa-user"></i></div>
+    </div>
+  </header>
+  <button class="btn btn-green" id="btnActualizar">Actualizar reportes</button>
+  <section class="report-grid">
+    <div class="panel">
+      <h3>Tiempo promedio</h3>
+      <div class="big" id="promedio">—</div>
+      <p class="muted">Calculado con visitas que ya registraron salida.</p>
+    </div>
+    <div class="panel"><h3>Visitas por día</h3><div id="porDia"></div></div>
+    <div class="panel"><h3>Visitas por despacho</h3><div id="porDespacho"></div></div>
+  </section>
+</main>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>

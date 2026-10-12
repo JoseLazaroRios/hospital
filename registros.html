@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registros · Control de Visitas</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script>try{if(!sessionStorage.getItem("usuario"))location.replace("index.html")}catch(e){}</script>
+</head>
+<body data-page="registros">
+<div id="toast" class="toast"></div>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo"><i class="fa-solid fa-building-user"></i></div>
+    <div><strong>Control</strong><small>Visitas</small></div>
+  </div>
+  <nav>
+    <a href="inicio.html"><i class="fa-solid fa-house"></i> Inicio</a>
+    <a href="registros.html" class="active"><i class="fa-solid fa-clipboard-list"></i> Registros</a>
+    <a href="reportes.html"><i class="fa-solid fa-chart-column"></i> Reportes</a>
+  </nav>
+  <a class="logout" id="logout" href="index.html"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</a>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div>
+      <h1>Registros</h1>
+      <p class="muted">Consulta, filtra y exporta el historial de visitantes.</p>
+    </div>
+    <div class="top-right">
+      <div class="search"><i class="fa-solid fa-magnifying-glass"></i>
+        <input id="buscarGlobal" placeholder="Buscar visitante, DNI o despacho…"></div>
+      <div class="avatar" id="avatar"><i class="fa-solid fa-user"></i></div>
+    </div>
+  </header>
+  <section class="panel filters">
+    <div><label>Fecha</label><input type="date" id="filtroFecha"></div>
+    <div><label>Despacho</label><input id="filtroDespacho" placeholder="Filtrar despacho"></div>
+    <button class="btn btn-green" id="btnFiltrar">Filtrar</button>
+    <button class="btn btn-soft" id="btnLimpiar">Limpiar</button>
+    <button class="btn btn-soft" id="btnCSV">Exportar CSV</button>
+  </section>
+
+  <section class="table-card table-wrap">
+    <table>
+      <thead><tr>
+        <th>Nombre</th><th>DNI</th><th>Visitado</th><th>Despacho</th><th>Fecha</th>
+        <th>Entrada</th><th>Salida</th><th>Tiempo</th><th>Estado</th><th></th>
+      </tr></thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>
